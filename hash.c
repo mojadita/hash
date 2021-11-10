@@ -6,6 +6,7 @@
  */
 #include <assert.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include "hashP.h"
 
@@ -49,10 +50,8 @@ grow(
 hash_t *
 new_hash(
 		const size_t initial_cap,
-		size_t (*hash_f)(const void *key),
-		int (*equals_f)(const void *key_a, const void *key_b),
-		const void *(*dup_f)(const void *),
-		void (*free_f)(const void *))
+		size_t (*hash_f)(const char *key),
+		int (*equals_f)(const char *key_a, const char *key_b))
 {
 	hash_t *ret_val = malloc(sizeof *ret_val);
 	if (!ret_val) {
@@ -64,8 +63,6 @@ new_hash(
 	ret_val->ht_collisions = 0;
 	ret_val->ht_hash_f = hash_f;
 	ret_val->ht_equals_f = equals_f;
-	ret_val->ht_dup_f = dup_f;
-	ret_val->ht_free_f = free_f;
 	/* this will just allocate the array for now. */
 	grow(ret_val, initial_cap);
 	return ret_val;
@@ -84,7 +81,7 @@ free_hash(
 			struct ht_entryP *q = p; /* save pointer */
 			p = p->ht_next; /* unlink before free() */
 			if (q->ht_pub.ht_key)
-				table->ht_free_f(q->ht_pub.ht_key);
+				free((void *)q->ht_pub.ht_key);
 			free(q);
 			table->ht_size--; /* table size */
 		}
@@ -97,7 +94,7 @@ free_hash(
 static size_t
 getIndex(
         hash_t *table,
-        const void *key)
+        const char *key)
 {
 	return table->ht_hash_f(key) % table->ht_capacity;
 } /* getIndex */
@@ -108,7 +105,7 @@ static struct ht_entryP **
 getPtrRef(
 		hash_t *tab,
 		struct ht_entryP **p,	/* the starting reference */
-		const void *key)
+		const char *key)
 {
 	assert(p != NULL); /* double check */
 	while(*p) { /* while the pointer referenced is not null */
@@ -129,7 +126,7 @@ static struct ht_entryP *
 getRef(
 		hash_t *tab,
 		struct ht_entryP *p,
-		const void *key)
+		const char *key)
 {
 	/* we use the above function */
 	return *getPtrRef(tab, &p, key);
@@ -138,7 +135,7 @@ getRef(
 const struct ht_entry *
 ht_get_entry(
 		hash_t *table,
-		const void *key)
+		const char *key)
 {
 	size_t ix = getIndex(table, key);
 	struct ht_entryP *p = getRef(table, table->ht_array[ix], key);
@@ -148,7 +145,7 @@ ht_get_entry(
 
 /* getter for the hash table */
 void *
-ht_get(hash_t *tab, const void *key)	
+ht_get(hash_t *tab, const char *key)	
 {
 	const ht_entry *aux = ht_get_entry(tab, key);
 	return aux ? aux->ht_val : NULL;
@@ -157,7 +154,7 @@ ht_get(hash_t *tab, const void *key)
 /* setter function for the hash table */
 void *
 ht_put(hash_t *tab,
-		const void *key,
+		const char *key,
 		void *value)
 {
 	size_t ix = getIndex(tab, key);
@@ -179,7 +176,7 @@ ht_put(hash_t *tab,
 		tab->ht_array[ix] = aux;
 		tab->ht_size++;
 	}
-	aux->ht_pub.ht_key = tab->ht_dup_f(key);
+	aux->ht_pub.ht_key = strdup(key);
 	aux->ht_pub.ht_val = value;
 	return old_val;
 }
@@ -191,7 +188,7 @@ ht_put(hash_t *tab,
 void *
 ht_remove(
         hash_t *tab,
-        void *key)
+        const char *key)
 {
 	size_t ix = getIndex(tab, key);
 	void *ret_val = NULL;
@@ -206,7 +203,7 @@ ht_remove(
 		tab->ht_collisions--;
 	}
 	if (q->ht_pub.ht_key) {
-		tab->ht_free_f(q->ht_pub.ht_key);
+		free((void *)q->ht_pub.ht_key);
 	}
 	free(q);
 	tab->ht_size--;
@@ -237,7 +234,7 @@ ht_get_capacity(
 size_t (*
 ht_get_hash_f(
             hash_t *tab)
-)(const void *key)
+)(const char *key)
 {
 	return tab->ht_hash_f;
 }
@@ -245,7 +242,7 @@ ht_get_hash_f(
 int (*
 ht_get_equals_f(
         hash_t *tab)
-)(const void *key_a, const void *key_b)
+)(const char *key_a, const char *key_b)
 {
 	return tab->ht_equals_f;
 }

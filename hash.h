@@ -21,7 +21,7 @@ typedef struct ht_hash hash_t;
  * values under the same key, in the case of a PUSH_POP semantics.
  */
 typedef struct ht_entry {
-    const void *ht_key;     /* the key of the entry */
+    const char *ht_key;     /* the key of the entry */
     void *ht_val;           /* the value of the entry's element */
 } ht_entry;
 
@@ -30,10 +30,8 @@ typedef struct ht_entry {
 hash_t * /* the new hash table returned */
 new_hash(
         const size_t initial_cap, /* the initial number of cells to be used in the array */
-        size_t (*hash_f)(const void *key), /* the hash function used in this hash table */
-        int (*equals_f)(const void *key_a, const void *key_b), /* the equals functon */
-		const void *(*dup_f)(const void *key), /* duplicating key function */
-		void (*free_f)(const void *key)); /* deallocating key function */
+        size_t (*hash_f)(const char *key), /* the hash function used in this hash table */
+        int (*equals_f)(const char *key_a, const char *key_b)); /* the equals functon */
 
 /* deallocator for the hash table. The hash table to deallocate
  * must have been allocated with new_hash() function.  After freeing
@@ -52,21 +50,21 @@ free_hash(
 const ht_entry *
 ht_get_entry(
         hash_t *table, /* hash table */
-        const void *key); /* key to be searched for */
+        const char *key); /* key to be searched for */
 
 /* getter for the hash table.  It returns the data reference corresponding
  * to the requested key.  */
 void *
 ht_get(
         hash_t *tab, /* hash table */
-        const void *key); /* key to be searched for */
+        const char *key); /* key to be searched for */
 
 /* setter function for the hash table. It sets an entry for given key on
  * given data value.  It returns the previous value stored for key or NULL,
  * in case there was none. */
 void *
 ht_put(hash_t *tab, /* hash table */
-        const void *key, /* key of data to be stored. */
+        const char *key, /* key of data to be stored. */
         void *value); /* value of data to be stored */
 
 /* remover for an entry.  Deletes the entry stored in given key and returns it.
@@ -74,7 +72,7 @@ ht_put(hash_t *tab, /* hash table */
 void *
 ht_remove(
         hash_t *tab, /* hash table */
-        void *key); /* key corresponding to data to be removed */
+        const char *key); /* key corresponding to data to be removed */
 
 /* returns the number of collisions actually in the table. A collision is when
  * two keys give the same index in the table and so lengthen the search for any
@@ -98,12 +96,12 @@ ht_get_capacity(
 size_t (*
 ht_get_hash_f(
             hash_t *tab) /* hash table */
-)(const void *key);
+)(const char *key);
 
 /* gets the equals function pointer stored to the caller. */
 int (*
 ht_get_equals_f(
         hash_t *tab) /* hash table */
-)(const void *key_a, const void *key_b);
+)(const char *key_a, const char *key_b);
 
 #endif /* _HASH_H (don'r remove or insert anything after this comment) */

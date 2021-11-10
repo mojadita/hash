@@ -5,7 +5,7 @@
 # License: BSD.
 
 SONAME	= 1.0
-VERSION = $(SONAME).1
+VERSION = $(SONAME).4
 RM		?= rm -f
 
 targets = test_hash hash.so hash.so.$(SONAME) hash.so.$(VERSION)

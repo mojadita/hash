@@ -27,16 +27,17 @@ static char *pager = "less";
 void help()
 {
 	printf(
-		"tstavl: test for the functions on the hash table.\n"
+		"test_hash: test sobre el funcionamiento de la tabla hash\n"
 		"(c) 2012 Luis Colorado.\n"
 		"All rights reseved.\n"
 		"Ayuda:\n"
 		"+id   añade <id,null> a la tabla.\n"
 		"-id   elimina <id,null> de la tabla. Si no existe no hace nada.\n"
 		"?id   consulta si <id,...> existe en la tabla.\n"
+		"=id   consulta el valor asociado a la entrada.\n"
 		"#     devuelve el número de entradas de la tabla.\n"
+		"!     devuelve el numero de colisiones de la tabla.\n"
 		"%%     borra todas las entradas de la tabla.\n"
-		"@n    genera n elementos aleatorios y los mezcla en la tabla.\n"
 		".     termina el programa.\n"
 	);
 } /* help */
@@ -68,27 +69,25 @@ void print_timestamp()
 		(unsigned long) end_ts.tv_nsec);
 } /* print_timestamp */
 
-size_t my_hash(const void *k)
+size_t my_hash(const char *k)
 {
-    const char *kk = k;
-	printf("my_hash(%s) -> ", kk);
+	printf("my_hash(%s) -> ", k);
 	int i;
 	size_t ret_val = 13;
-	for (i = 0; (i < 3) && *kk; i++) {
+	for (i = 0; (i < 3) && *k; i++) {
 		ret_val *= 11;
-		ret_val += *kk++;
+		ret_val += *k++;
 	}
 	printf("%lu\n", ret_val);
 	return ret_val;
 }
 
-int my_equals(const void *a, const void *b)
+int my_equals(const char *a, const char *b)
 {
-    const char *aa = a, *bb = b;
-	int res = strcmp(aa, bb) == 0;
+	int res = strcmp(a, b) == 0;
 	printf("my_equals(%s, %s) -> %s\n",
-			aa, bb, res ? "TRUE" : "FALSE");
-    return res;
+		a, b, res ? "true" : "false");
+	return res;
 }
 
 /* main program */
@@ -96,7 +95,7 @@ int main (int argc, char **argv)
 {
 	char buffer[1024];
 
-	hash_t *t = new_hash(113, my_hash, my_equals, (const void *(*)(const void *))strdup, (void (*)(const void*))free);
+	hash_t *t = new_hash(113, my_hash, my_equals);
 	long NN = 0;
 	int opt;
 	while((opt = getopt(argc, argv, "ph")) != EOF) {
@@ -155,7 +154,7 @@ int main (int argc, char **argv)
 			set_timestamp();
 			free_hash(t);
 			print_timestamp();
-			t = new_hash(113, my_hash, my_equals, (const void *(*)(const void *))strdup, (void (*)(const void*))free);
+			t = new_hash(113, my_hash, my_equals);
 			NN = 0;
 			continue;
 		case '.': goto exit;
