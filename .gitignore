@@ -1,0 +1,6 @@
+.depend
+*.o
+test_hash
+*.so
+*.so.*
+*.pico
