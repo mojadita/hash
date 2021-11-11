@@ -35,8 +35,10 @@ void help()
 		"-id   elimina <id,null> de la tabla. Si no existe no hace nada.\n"
 		"?id   consulta si <id,...> existe en la tabla.\n"
 		"=id   consulta el valor asociado a la entrada.\n"
+		"/     borra la tabla hash entera, liberando toda la memoria\n"
 		"#     devuelve el número de entradas de la tabla.\n"
 		"!     devuelve el numero de colisiones de la tabla.\n"
+		"*     imprime la tabla hash en formato JSON.\n"
 		"%%     borra todas las entradas de la tabla.\n"
 		".     termina el programa.\n"
 	);
@@ -90,12 +92,17 @@ int my_equals(const char *a, const char *b)
 	return res;
 }
 
+size_t my_keylen(const char *key)
+{
+	return strlen(key) + 1;
+}
+
 /* main program */
 int main (int argc, char **argv)
 {
 	char buffer[1024];
 
-	hash_t *t = new_hash(113, my_hash, my_equals);
+	hash_t *t = new_hash(113, my_hash, my_equals, my_keylen);
 	long NN = 0;
 	int opt;
 	while((opt = getopt(argc, argv, "ph")) != EOF) {
@@ -108,6 +115,10 @@ int main (int argc, char **argv)
 	help();
 	while (fgets(buffer, sizeof buffer, stdin)) {
 		char *p = strtok(buffer, "\n");
+		if (!p) {
+			help();
+			continue;
+		}
 		switch (*p) {
 		case '-': p++;
             set_timestamp();
@@ -129,10 +140,20 @@ int main (int argc, char **argv)
             ht_put(t, p, (void *)++NN);
             print_timestamp();
             continue;
+		case '/':
+			set_timestamp();
+			ht_clear(t);
+			print_timestamp();
+			continue;
 		default:
             printf("ERROR: entrada inválida: %s\n",
                     p);
             help(); continue;
+		case '*':
+			set_timestamp();
+			ht_print(t, stdout);
+			print_timestamp();
+			continue;
 		case '#':
             set_timestamp();
 			printf("#: %zd\n", ht_get_size(t));
@@ -154,7 +175,7 @@ int main (int argc, char **argv)
 			set_timestamp();
 			free_hash(t);
 			print_timestamp();
-			t = new_hash(113, my_hash, my_equals);
+			t = new_hash(113, my_hash, my_equals, my_keylen);
 			NN = 0;
 			continue;
 		case '.': goto exit;

@@ -4,3 +4,5 @@ test_hash
 *.so
 *.so.*
 *.pico
+*.core
+core

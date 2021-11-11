@@ -23,11 +23,13 @@ struct ht_entryP {
  * dup()ed so they should be considered readonly, and living all
  * the time the keys are used in the hash table. */
 struct ht_hash {
-	size_t (* ht_hash_f)(const char *key);
 								/* hash function */
-	int    (* ht_equals_f)(const char *key_a, const char *key_b);
+	size_t (* ht_hash_f)(const char *key);
 								/* equals function */
-	struct ht_entryP **ht_array; /* pointer to array of entries */
+	int    (* ht_equals_f)(const char *key_a, const char *key_b);
+								/* size of key calculator */
+	size_t (* ht_size_f)(const char *key);
+	struct ht_entryP **ht_array;/* pointer to array of entries */
 	size_t ht_size;				/* number of elements in table */
 	size_t ht_capacity;			/* number of array entries,
 								 * should be prime number */

@@ -8,6 +8,7 @@
 #define _HASH_H /* ... */
 
 #include <sys/types.h> /* size_t is defined here */
+#include <stdio.h> /* for FILE */
 
 /* this type is opaque to avoid the user to access the main hash
  * table fields.  Look in hashP.h for the definitions of this
@@ -27,11 +28,16 @@ typedef struct ht_entry {
 
 /* hash table constructor.  Creates a hash table with given initial
  * capacity, hash function and equal function. */
-hash_t * /* the new hash table returned */
+hash_t *
 new_hash(
-        const size_t initial_cap, /* the initial number of cells to be used in the array */
-        size_t (*hash_f)(const char *key), /* the hash function used in this hash table */
-        int (*equals_f)(const char *key_a, const char *key_b)); /* the equals functon */
+		const size_t initial_cap,
+		size_t (*hash_f)(const char *key),
+		int (*equals_f)(const char *key_a, const char *key_b),
+		size_t (*sizeof_f) (const char *key));
+
+/* clear hash_table */
+void ht_clear(
+		hash_t *table);
 
 /* deallocator for the hash table. The hash table to deallocate
  * must have been allocated with new_hash() function.  After freeing
@@ -103,5 +109,11 @@ int (*
 ht_get_equals_f(
         hash_t *tab) /* hash table */
 )(const char *key_a, const char *key_b);
+
+/* prints the contents of the hash table to file descriptor f. */
+size_t
+ht_print(
+		hash_t *tab, /* hash table */
+		FILE *f); /* file descriptor to output hash table. */
 
 #endif /* _HASH_H (don'r remove or insert anything after this comment) */

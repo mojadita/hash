@@ -10,68 +10,33 @@
 
 #include "hashP.h"
 
-/* this function grows a hash table and reindexes all the entries
- * that were in the old array. */
-static void
-grow(
-		hash_t *table,
-		size_t new_size)
-{
-	/* 1.- save the old array and capacity. */
-	struct ht_entryP **old_array = table->ht_array;
-	size_t old_cap = table->ht_capacity;
-
-	/* 2.- create the new array and populate it with NULLs.
-	 * we use calloc() as it gives a NULL initialized array of
-	 * pointers */
-	table->ht_size = 0;
-	table->ht_array = calloc(sizeof *table->ht_array, new_size);
-	table->ht_capacity = new_size;
-	table->ht_collisions = 0;
-	if (old_array) {
-		/* 3.- navigate the old array for all the original entries */
-		for (int ix = 0; ix < old_cap; ix++) {
-			struct ht_entryP * p = old_array[ix];
-			while (p) {
-				/* 4.- and put them in the new table */
-				ht_put(table, p->ht_pub.ht_key, p->ht_pub.ht_val);
-				/* 5.- unlink old entry */
-				struct ht_entryP *q = p;
-				p = p->ht_next;
-				/* 6.- and free */
-				free(q);
-            }
-        }
-		/* 7.- and free old_array */
-		free(old_array);
-    }
-} /* grow */
-
 hash_t *
 new_hash(
 		const size_t initial_cap,
 		size_t (*hash_f)(const char *key),
-		int (*equals_f)(const char *key_a, const char *key_b))
+		int (*equals_f)(const char *key_a, const char *key_b),
+		size_t (*sizeof_f) (const char *key))
 {
 	hash_t *ret_val = malloc(sizeof *ret_val);
 	if (!ret_val) {
 		return NULL;
 	}
 	ret_val->ht_size = 0;
-	ret_val->ht_capacity = 0;
+	ret_val->ht_capacity = initial_cap;
 	ret_val->ht_array = NULL;
 	ret_val->ht_collisions = 0;
 	ret_val->ht_hash_f = hash_f;
 	ret_val->ht_equals_f = equals_f;
+	ret_val->ht_size_f = sizeof_f;
 	/* this will just allocate the array for now. */
-	grow(ret_val, initial_cap);
+	ret_val->ht_array = calloc(
+			ret_val->ht_capacity,
+			sizeof *ret_val->ht_array);
 	return ret_val;
 } /* new_hash */
 
-/* deallocator for the hash table. The hash table to deallocate
- * must have been allocated with new_hash() function. */
-void
-free_hash(
+/* clear hash_table */
+void ht_clear(
 		hash_t *table)
 {
     for(size_t ix = 0; ix < table->ht_capacity; ix++) {
@@ -85,8 +50,18 @@ free_hash(
 			free(q);
 			table->ht_size--; /* table size */
 		}
+		assert(table->ht_array[ix] == NULL);
 	}
 	assert(table->ht_size == 0); /* double check */
+}
+
+/* deallocator for the hash table. The hash table to deallocate
+ * must have been allocated with new_hash() function. */
+void
+free_hash(
+		hash_t *table)
+{
+	ht_clear(table);
 	free(table->ht_array); /* free the array */
 	free(table);
 } /* free_hash */
@@ -176,7 +151,14 @@ ht_put(hash_t *tab,
 		tab->ht_array[ix] = aux;
 		tab->ht_size++;
 	}
-	aux->ht_pub.ht_key = strdup(key);
+	/* calculate key size */
+	size_t key_sz = tab->ht_size_f(key);
+	/* malloc */
+	aux->ht_pub.ht_key = malloc(key_sz);
+	assert(aux->ht_pub.ht_key != NULL);
+	/* copy */
+	memcpy((char *)aux->ht_pub.ht_key, key, key_sz);
+	/* reference to the value */
 	aux->ht_pub.ht_val = value;
 	return old_val;
 }
@@ -245,4 +227,60 @@ ht_get_equals_f(
 )(const char *key_a, const char *key_b)
 {
 	return tab->ht_equals_f;
+}
+
+size_t
+escape(const char *s, char *buffer, size_t buff_sz)
+{
+	size_t ret_val = 0;
+	while (*s && buff_sz > 2) {
+		switch(*s) {
+		case '\\': case '\"': case '\'':
+			*buffer++ = '\\';
+			*buffer++ = *s;
+			ret_val += 2;
+			break;
+		case '\n':
+			*buffer++ = '\\';
+			*buffer++ = 'n';
+			ret_val += 2;
+			break;
+		default:
+			*buffer++ = *s;
+			ret_val++;
+			break;
+		}
+		s++;
+	}
+	*buffer++ = '\0';
+	ret_val++;
+	return ret_val;
+}
+
+size_t
+ht_print(
+		hash_t *tab,
+		FILE *f)
+{
+	size_t ret_val = 0;
+	char *sep = "";
+	ret_val += fprintf(f, "{\n\t");
+	for(size_t ix = 0; ix < tab->ht_capacity; ix++) {
+		for (struct ht_entryP *p = tab->ht_array[ix];
+			p; p = p->ht_next)
+		{
+			char buffer[256];
+			char *p_aux = buffer;
+			size_t buf_sz = sizeof buffer;
+			size_t n = escape(p->ht_pub.ht_key, p_aux, buf_sz);
+			p_aux += n; buf_sz -= n;
+			ret_val += fprintf(f, "%s\"%s\": %p",
+					sep,
+					buffer,
+					p->ht_pub.ht_val);
+			sep = ",\n\t";
+		}
+	}
+	ret_val += fprintf(f, "\n}\n");
+	return ret_val;
 }
