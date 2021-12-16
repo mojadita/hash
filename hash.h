@@ -30,14 +30,14 @@ typedef struct ht_entry {
  * capacity, hash function and equal function. */
 hash_t *
 new_hash(
-		const size_t initial_cap,
-		size_t (*hash_f)(const char *key),
-		int (*equals_f)(const char *key_a, const char *key_b),
-		size_t (*sizeof_f) (const char *key));
+        const size_t initial_cap,
+        size_t (*hash_f)(const char *key),
+        int (*equals_f)(const char *key_a, const char *key_b),
+        size_t (*sizeof_f) (const char *key));
 
 /* clear hash_table */
 void ht_clear(
-		hash_t *table);
+        hash_t *table);
 
 /* deallocator for the hash table. The hash table to deallocate
  * must have been allocated with new_hash() function.  After freeing
@@ -113,7 +113,7 @@ ht_get_equals_f(
 /* prints the contents of the hash table to file descriptor f. */
 size_t
 ht_print(
-		hash_t *tab, /* hash table */
-		FILE *f); /* file descriptor to output hash table. */
+        hash_t *tab, /* hash table */
+        FILE *f); /* file descriptor to output hash table. */
 
 #endif /* _HASH_H (don'r remove or insert anything after this comment) */

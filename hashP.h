@@ -10,8 +10,8 @@
 #include "hash.h"
 
 struct ht_entryP {
-	struct ht_entry ht_pub;
-	struct ht_entryP *ht_next;
+    struct ht_entry ht_pub;
+    struct ht_entryP *ht_next;
 };
 
 /* hash stores it's actual number of elements, as counting them
@@ -23,17 +23,17 @@ struct ht_entryP {
  * dup()ed so they should be considered readonly, and living all
  * the time the keys are used in the hash table. */
 struct ht_hash {
-								/* hash function */
-	size_t (* ht_hash_f)(const char *key);
-								/* equals function */
-	int    (* ht_equals_f)(const char *key_a, const char *key_b);
-								/* size of key calculator */
-	size_t (* ht_size_f)(const char *key);
-	struct ht_entryP **ht_array;/* pointer to array of entries */
-	size_t ht_size;				/* number of elements in table */
-	size_t ht_capacity;			/* number of array entries,
-								 * should be prime number */
-	size_t ht_collisions;		/* number of collisions */
+                                /* hash function */
+    size_t (* ht_hash_f)(const char *key);
+                                /* equals function */
+    int    (* ht_equals_f)(const char *key_a, const char *key_b);
+                                /* size of key calculator */
+    size_t (* ht_size_f)(const char *key);
+    struct ht_entryP **ht_array;/* pointer to array of entries */
+    size_t ht_size;             /* number of elements in table */
+    size_t ht_capacity;         /* number of array entries,
+                                 * should be prime number */
+    size_t ht_collisions;       /* number of collisions */
 };
 
 #endif /* _HASHP_H */
