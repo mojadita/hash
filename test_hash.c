@@ -101,7 +101,7 @@ int main (int argc, char **argv)
 {
     char buffer[1024];
 
-    hash_t *t = new_hash(113, my_hash, my_equals, my_keylen);
+    ht_hash_t *t = ht_new(113, my_hash, my_equals, my_keylen);
     long NN = 0;
     int opt;
     while((opt = getopt(argc, argv, "ph")) != EOF) {
@@ -172,9 +172,9 @@ int main (int argc, char **argv)
                   }
         case '%':
             set_timestamp();
-            free_hash(t);
+            ht_delete(t);
             print_timestamp();
-            t = new_hash(113, my_hash, my_equals, my_keylen);
+            t = ht_new(113, my_hash, my_equals, my_keylen);
             NN = 0;
             continue;
         case '.': goto exit;
