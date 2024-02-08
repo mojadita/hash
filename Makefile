@@ -10,9 +10,12 @@ MINOR         != git rev-parse HEAD | cut -c 1-10
 DEVNAME       = libhash.so
 SO_NAME	      = $(DEVNAME).$(MAJOR)
 LIBNAME       = $(SO_NAME).$(MINOR)
-toclean      += $(DEVNAME) $(SO_NAME) $(LIBNAME)
+targets       = $(DEVNAME) $(SO_NAME) $(LIBNAME)
+toclean      += $(targets)
 
 RM		     ?= rm -f
+RD		     ?= rmdir
+LN           ?= ln -sf
 
 prefix       ?= /usr/local
 exec_prefix  ?= $(prefix)
@@ -34,7 +37,6 @@ FMOD         ?= 644
 XMOD         ?= 755
 LMOD         ?= 644
 
-targets       = test_hash
 toclean      += $(targets)
 
 .PHONY: all clean uninstall
@@ -46,25 +48,26 @@ clean:
 
 .depend:
 	mkdep $(SRCS)
+toclean      += .depend
 
 $(libdir)/$(DEVNAME): $(libdir)/$(SO_NAME)
-	-ln -sf $(SO_NAME) $(libdir)/$(DEVNAME)
+	-$(LN) $(SO_NAME) $(libdir)/$(DEVNAME)
 $(libdir)/$(SO_NAME): $(libdir)/$(LIBNAME)
-	-ln -sf $(LIBNAME) $(libdir)/$(SO_NAME)
+	-$(LN) $(LIBNAME) $(libdir)/$(SO_NAME)
 
 $(libdir)/$(LIBNAME): $(libdir) $(LIBNAME)
 	-$(INSTALL) $(IFLAGS) -o $(OWN) -g $(GRP) -m $(DMOD) $(LIBNAME) $(libdir)
 
 $(libdir):
 	-$(INSTALL) $(IFLAGS) -o $(OWN) -g $(GRP) -m $(DMOD) -d $(libdir)
-to_uninstall  += $(libdir)/$(DEVNAME) $(libdir)/$(SO_NAME) $(Libdir)/$(LIBNAME) 
+to_uninstall  += $(libdir)/$(DEVNAME) $(libdir)/$(SO_NAME) $(libdir)/$(LIBNAME) 
 to_rmdir      += $(libdir)
 
 install: $(libdir)/$(DEVNAME)
 
 uninstall:
 	-$(RM) $(to_uninstall)
-	-rmdir $(to_rmdir)
+	-$(RD) $(to_rmdir)
 
 .SUFFIXES: .pico
 
@@ -84,7 +87,6 @@ libhash_libs =
 
 OBJS    += $(libhash_objs)
 
-
 toclean += $(libhash_objs)
 
 SRCS    := $(OBJS:.o=.c)
@@ -103,6 +105,8 @@ $(LIBNAME): $(libhash_deps) $(libhash_objs)
 test_hash: $(test_hash_deps) $(test_hash_objs)
 	$(CC) $(CFLAGS) -o $@ $(LDFLAGS) $($@_ldfl) \
 	    $($@_objs) $($@_libs) $(LIBS)
+
+$(OBJS): .depend
 
 .c.pico:
 	$(CC) $(CFLAGS) -fPIC -DPIC -o $@ -c $<
